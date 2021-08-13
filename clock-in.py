@@ -8,6 +8,7 @@ import re
 import datetime
 import time
 import sys
+import random
 
 
 class ClockIn(object):
@@ -149,6 +150,10 @@ def main(username, password):
         username: (str) 浙大统一认证平台用户名（一般为学号）
         password: (str) 浙大统一认证平台密码
     """
+    delay_time = random.randint(0,3000)
+    print("任务将在%d秒后执行" % delay_time)
+    time.sleep(delay_time)
+    
     print("\n[Time] %s" %
           datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     print("🚌 打卡任务启动")
