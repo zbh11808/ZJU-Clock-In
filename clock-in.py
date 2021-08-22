@@ -34,6 +34,7 @@ class ClockIn(object):
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
         }
         self.sess = requests.Session()
+        self.sess.keep_alive = False
 
     def login(self):
         """Login to ZJU platform"""
