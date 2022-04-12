@@ -173,7 +173,7 @@ def main(username, password):
     """
     delay_time = random.randint(0,3000)
     print("任务将在%d秒后执行" % delay_time)
-    time.sleep(delay_time)
+    #time.sleep(delay_time)
     
     print("\n[Time] %s" %
           datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
