@@ -11,7 +11,7 @@ import sys
 import random
 import smtplib
 from email.mime.text import MIMEText
-from email.header import Header
+from email.utils import formataddr
 
 my_sender='zbh11808@126.com'    # 发件人邮箱账号
 my_user='921263166@qq.com'      # 收件人邮箱账号
