@@ -1,15 +1,5 @@
 # 自动打卡教程
 
-**信息同步与问题反馈群:**
-
-<img src="https://gitee.com/dizhipeng/image/raw/master/img/image-20210806110359202.png" alt="image-20210806110359202" style="zoom:50%;" />
-
-
-
- **如果看不到本文的图片，就查看仓库内的pdf文件**
-
-首先你需要拥有一个github，直接在左上角注册就行了。
-
 ### Step1. Fork本仓库
 
 点击本仓库的Fork
