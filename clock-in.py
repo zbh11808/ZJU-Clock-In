@@ -9,7 +9,12 @@ import datetime
 import time
 import sys
 import random
+import smtplib
+from email.mime.text import MIMEText
+from email.header import Header
 
+my_sender='zbh11808@126.com'    # 发件人邮箱账号
+my_user='921263166@qq.com'      # 收件人邮箱账号
 
 class ClockIn(object):
     """Hit card class
@@ -143,6 +148,21 @@ class DecodeError(Exception):
     """JSON Decode Exception"""
     pass
 
+def mail():
+    ret=True
+    try:
+        msg=MIMEText('今日打卡失败','plain','utf-8')
+        msg['From']=formataddr(["zbh11808",my_sender])  # 括号里的对应发件人邮箱昵称、发件人邮箱账号
+        msg['To']=formataddr(["921263166",my_user])              # 括号里的对应收件人邮箱昵称、收件人邮箱账号
+        msg['Subject']="今日打卡失败"                # 邮件的主题，也可以说是标题
+ 
+        server=smtplib.SMTP_SSL("smtp.126.com", 465)  # 发件人邮箱中的SMTP服务器，SSL端口是465
+        server.login(my_sender, my_pass)  # 括号中对应的是发件人邮箱账号、邮箱密码
+        server.sendmail(my_sender,[my_user,],msg.as_string())  # 括号中对应的是发件人邮箱账号、收件人邮箱账号、发送邮件
+        server.quit()  # 关闭连接
+    except Exception:  # 如果 try 中的语句没有执行，则会执行下面的 ret=False
+        ret=False
+    return ret
 
 def main(username, password):
     """Hit card process
@@ -196,7 +216,13 @@ def main(username, password):
 if __name__ == "__main__":
     username = sys.argv[1]
     password = sys.argv[2]
+    my_pass = str(sys.argv[3])
     try:
         main(username, password)
     except Exception:
+        ret=mail()
+        if ret:
+            print("邮件发送成功")
+        else:
+            print("邮件发送失败")
         exit(1)
