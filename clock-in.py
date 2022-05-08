@@ -2,6 +2,7 @@
 
 # 打卡脚修改自ZJU-nCov-Hitcarder的开源代码，感谢这位同学开源的代码
 
+from traceback import print_tb
 import requests
 import json
 import re
@@ -12,13 +13,46 @@ import random
 import smtplib
 from email.mime.text import MIMEText
 from email.utils import formataddr
+import base64
+
+
+# 保证兼容python2以及python3
+IS_PY3 = sys.version_info.major == 3
+if IS_PY3:
+    from urllib.request import urlopen
+    from urllib.request import Request
+    from urllib.error import URLError
+    from urllib.parse import urlencode
+    from urllib.parse import quote_plus
+else:
+    import urllib2
+    from urllib import quote_plus
+    from urllib2 import urlopen
+    from urllib2 import Request
+    from urllib2 import URLError
+    from urllib import urlencode
+
+# 防止https证书校验不正确
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+
+API_KEY = 'mrxonS6pcI5LCn7NrtMRy0iu'
+
+SECRET_KEY = 'BOezi8kqOSQFesxVCPoMBZQQ3EK4MT8s'
+
+
+OCR_URL = "https://aip.baidubce.com/rest/2.0/ocr/v1/accurate_basic"
+
+
+"""  TOKEN start """
+TOKEN_URL = 'https://aip.baidubce.com/oauth/2.0/token'
+
 
 my_sender='zbh11808@126.com'    # 发件人邮箱账号
 my_user='921263166@qq.com'      # 收件人邮箱账号
 
 class ClockIn(object):
     """Hit card class
-
     Attributes:
         username: (str) 浙大统一认证平台用户名（一般为学号）
         password: (str) 浙大统一认证平台密码
@@ -35,11 +69,74 @@ class ClockIn(object):
         self.login_url = "https://zjuam.zju.edu.cn/cas/login?service=https%3A%2F%2Fhealthreport.zju.edu.cn%2Fa_zju%2Fapi%2Fsso%2Findex%3Fredirect%3Dhttps%253A%252F%252Fhealthreport.zju.edu.cn%252Fncov%252Fwap%252Fdefault%252Findex"
         self.base_url = "https://healthreport.zju.edu.cn/ncov/wap/default/index"
         self.save_url = "https://healthreport.zju.edu.cn/ncov/wap/default/save"
+        self.code_url = "https://healthreport.zju.edu.cn/ncov/wap/default/code"
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
         }
         self.sess = requests.Session()
         self.sess.keep_alive = False
+    
+    """
+        获取token
+    """
+    def fetch_token(self):
+        params = {'grant_type': 'client_credentials',
+                'client_id': API_KEY,
+                'client_secret': SECRET_KEY}
+        post_data = urlencode(params)
+        if (IS_PY3):
+            post_data = post_data.encode('utf-8')
+        req = Request(TOKEN_URL, post_data)
+        try:
+            f = urlopen(req, timeout=5)
+            result_str = f.read()
+        except URLError as err:
+            print(err)
+        if (IS_PY3):
+            result_str = result_str.decode()
+
+
+        result = json.loads(result_str)
+
+        if ('access_token' in result.keys() and 'scope' in result.keys()):
+            if not 'brain_all_scope' in result['scope'].split(' '):
+                print ('please ensure has check the  ability')
+                exit()
+            return result['access_token']
+        else:
+            print ('please overwrite the correct API_KEY and SECRET_KEY')
+            exit()
+
+    """
+        读取文件
+    """
+    def read_file(self, image_path):
+        f = None
+        try:
+            f = open(image_path, 'rb')
+            return f.read()
+        except:
+            print('read image file fail')
+            return None
+        finally:
+            if f:
+                f.close()
+
+
+    """
+        调用远程服务
+    """
+    def request(self, url, data):
+        req = Request(url, data.encode('utf-8'))
+        has_error = False
+        try:
+            f = urlopen(req)
+            result_str = f.read()
+            if (IS_PY3):
+                result_str = result_str.decode()
+            return result_str
+        except  URLError as err:
+            print(err)
 
     def login(self):
         """Login to ZJU platform"""
@@ -58,7 +155,7 @@ class ClockIn(object):
             '_eventId': 'submit'
         }
         res = self.sess.post(url=self.login_url, data=data, headers=self.headers)
-
+        # print(res.content.decode())
         # check if login successfully
         if '统一身份认证' in res.content.decode():
             raise LoginError('登录失败，请核实账号密码重新登录')
@@ -77,8 +174,31 @@ class ClockIn(object):
     def get_info(self, html=None):
         """Get hitcard info, which is the old info with updated new time."""
         if not html:
+            time.sleep(5)
             res = self.sess.get(self.base_url, headers=self.headers)
             html = res.content.decode()
+            res = self.sess.get(self.code_url, headers=self.headers)
+            with open('code.jpg', 'wb') as file:
+                file.write(res.content)
+                file.close
+            # codenum = input("请输入验证码：")
+
+            # 获取access token
+            token = self.fetch_token()
+            # 拼接通用文字识别高精度url
+            image_url = OCR_URL + "?access_token=" + token
+            text = ""
+            # 读取测试图片
+            file_content = self.read_file('./code.jpg')
+            # 调用文字识别服务
+            result = self.request(image_url, urlencode({'image': base64.b64encode(file_content)}))
+            result_json = json.loads(result)
+            for words_result in result_json["words_result"]:
+                text = text + words_result["words"]
+                print(text)
+            
+
+
 
         try:
             old_infos = re.findall(r'oldInfo: ({[^\n]+})', html)
@@ -115,6 +235,7 @@ class ClockIn(object):
         new_info['jcqzrq'] = ""
         new_info['gwszdd'] = ""
         new_info['szgjcs'] = ""
+        new_info['verifyCode'] = text
 
         # 2021.08.05 Fix 2
         magics = re.findall(r'"([0-9a-f]{32})":\s*"([^\"]+)"', html)
@@ -166,7 +287,6 @@ def mail():
 
 def main(username, password):
     """Hit card process
-
     Arguments:
         username: (str) 浙大统一认证平台用户名（一般为学号）
         password: (str) 浙大统一认证平台密码
