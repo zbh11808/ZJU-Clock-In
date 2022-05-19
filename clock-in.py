@@ -177,25 +177,25 @@ class ClockIn(object):
             time.sleep(5)
             res = self.sess.get(self.base_url, headers=self.headers)
             html = res.content.decode()
-            res = self.sess.get(self.code_url, headers=self.headers)
-            with open('code.jpg', 'wb') as file:
-                file.write(res.content)
-                file.close
-            # codenum = input("请输入验证码：")
+#             res = self.sess.get(self.code_url, headers=self.headers)
+#             with open('code.jpg', 'wb') as file:
+#                 file.write(res.content)
+#                 file.close
+#             # codenum = input("请输入验证码：")
 
-            # 获取access token
-            token = self.fetch_token()
-            # 拼接通用文字识别高精度url
-            image_url = OCR_URL + "?access_token=" + token
-            text = ""
-            # 读取测试图片
-            file_content = self.read_file('./code.jpg')
-            # 调用文字识别服务
-            result = self.request(image_url, urlencode({'image': base64.b64encode(file_content)}))
-            result_json = json.loads(result)
-            for words_result in result_json["words_result"]:
-                text = text + words_result["words"]
-                print(text)
+#             # 获取access token
+#             token = self.fetch_token()
+#             # 拼接通用文字识别高精度url
+#             image_url = OCR_URL + "?access_token=" + token
+#             text = ""
+#             # 读取测试图片
+#             file_content = self.read_file('./code.jpg')
+#             # 调用文字识别服务
+#             result = self.request(image_url, urlencode({'image': base64.b64encode(file_content)}))
+#             result_json = json.loads(result)
+#             for words_result in result_json["words_result"]:
+#                 text = text + words_result["words"]
+#                 print(text)
             
 
 
@@ -235,7 +235,7 @@ class ClockIn(object):
         new_info['jcqzrq'] = ""
         new_info['gwszdd'] = ""
         new_info['szgjcs'] = ""
-        new_info['verifyCode'] = text
+#         new_info['verifyCode'] = text
 
         # 2021.08.05 Fix 2
         magics = re.findall(r'"([0-9a-f]{32})":\s*"([^\"]+)"', html)
